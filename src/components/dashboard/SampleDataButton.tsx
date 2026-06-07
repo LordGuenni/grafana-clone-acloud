@@ -70,7 +70,21 @@ export function SampleDataButton() {
       i: userId, x: 0, y: 4, w: 6, h: 4,
     });
 
-    // 3. Pie Chart: Revenue Share by Region
+    // 3. Area Chart: Global Latency Trend
+    const latencyId = uuidv4();
+    addPanel({
+      id: latencyId,
+      title: 'Network Performance (Latency ms)',
+      type: 'area',
+      dataSourceId: datasetId,
+      xKey: 'month',
+      yKey: 'latency',
+      aggregation: 'avg',
+    }, {
+      i: latencyId, x: 6, y: 4, w: 6, h: 4,
+    });
+
+    // 4. Pie Chart: Revenue Share (Imported Config)
     const pieId = uuidv4();
     addPanel({
       id: pieId,
@@ -81,7 +95,7 @@ export function SampleDataButton() {
       yKey: 'revenue',
       aggregation: 'sum',
     }, {
-      i: pieId, x: 6, y: 4, w: 6, h: 4,
+      i: pieId, x: 0, y: 8, w: 12, h: 4,
     });
   };
 
