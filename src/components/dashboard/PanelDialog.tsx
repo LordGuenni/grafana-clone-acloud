@@ -209,9 +209,7 @@ export function PanelDialog({ mode = 'add', panelToEdit, trigger }: PanelDialogP
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        {trigger || defaultTrigger}
-      </DialogTrigger>
+      <DialogTrigger render={trigger || defaultTrigger} />
       <DialogContent className="sm:max-w-[800px] gap-0 p-0 overflow-hidden border-none shadow-2xl">
         <div className="flex flex-col md:flex-row h-full max-h-[90vh]">
           {/* Configuration Side */}
