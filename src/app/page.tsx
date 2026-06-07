@@ -4,7 +4,7 @@ import React from 'react';
 import { Dashboard } from '@/components/dashboard/Dashboard';
 import { DataImporter } from '@/components/dashboard/DataImporter';
 import { DataExporter as DataExportJSON } from '@/components/dashboard/DataExportJSON';
-import { AddPanelDialog } from '@/components/dashboard/AddPanelDialog';
+import { PanelDialog } from '@/components/dashboard/PanelDialog';
 import { SampleDataButton } from '@/components/dashboard/SampleDataButton';
 import { GlobalFilter } from '@/components/dashboard/GlobalFilter';
 import { ThemeToggle } from '@/components/ThemeToggle';
@@ -42,7 +42,7 @@ export default function Home() {
           <DataExportJSON />
           <SampleDataButton />
           <DataImporter />
-          <AddPanelDialog />
+          <PanelDialog mode="add" />
           <ThemeToggle />
         </div>
       </motion.header>

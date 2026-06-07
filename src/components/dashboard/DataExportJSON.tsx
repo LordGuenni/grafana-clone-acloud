@@ -18,7 +18,6 @@ export function DataExporter() {
   const { datasets, panels, layouts } = useDashboardStore();
 
   const triggerDownload = (filename: string, data: any) => {
-    console.log(`Attempting to download: ${filename}`);
     try {
       const dataStr = JSON.stringify(data, null, 2);
       const blob = new Blob([dataStr], { type: 'application/json' });
@@ -28,25 +27,27 @@ export function DataExporter() {
       link.href = url;
       link.download = filename;
       
-      // Required for Firefox
+      // Append to document to ensure visibility/validity in all browsers
       document.body.appendChild(link);
       
-      // Small timeout ensures the menu closes and browser handles the click
+      // Trigger click immediately to preserve User Gesture context in production environments
+      link.click();
+      
+      // Cleanup
+      document.body.removeChild(link);
+      
+      // Revoke after a longer delay to ensure the browser has initiated the download
       setTimeout(() => {
-        link.click();
-        document.body.removeChild(link);
         URL.revokeObjectURL(url);
-        console.log('Download triggered successfully');
-      }, 50);
+      }, 5000);
+      
     } catch (error) {
-      console.error('Export failed:', error);
+      console.error('NexusInsight Export Error:', error);
+      alert('Failed to generate export file. Please check console for details.');
     }
   };
 
-  const exportFullDashboard = (e: React.MouseEvent | Event) => {
-    // Prevent dropdown from keeping focus or interfering
-    e.stopPropagation();
-    
+  const exportFullDashboard = () => {
     const exportData = {
       type: 'nexus-insight-dashboard-config',
       version: '1.0',
@@ -55,12 +56,10 @@ export function DataExporter() {
       panels,
       layouts,
     };
-    triggerDownload(`nexus_dashboard_config_${new Date().getTime()}.json`, exportData);
+    triggerDownload(`nexus_full_backup_${new Date().toISOString().split('T')[0]}.json`, exportData);
   };
 
-  const exportDatasetOnly = (e: React.MouseEvent | Event, datasetId: string) => {
-    e.stopPropagation();
-    
+  const exportDatasetOnly = (datasetId: string) => {
     const dataset = datasets.find((d) => d.id === datasetId);
     if (!dataset) return;
 
@@ -71,8 +70,8 @@ export function DataExporter() {
       relatedLayouts: layouts.filter(l => panels.some(p => p.id === l.i && p.dataSourceId === datasetId))
     };
 
-    const exportFileDefaultName = `${dataset.name.replace(/\.[^/.]+$/, "")}_full_config.json`;
-    triggerDownload(exportFileDefaultName, exportData);
+    const safeName = dataset.name.replace(/[^a-z0-9]/gi, '_').toLowerCase();
+    triggerDownload(`${safeName}_dataset.json`, exportData);
   };
 
   if (datasets.length === 0) return null;
@@ -93,24 +92,24 @@ export function DataExporter() {
       />
       <DropdownMenuContent align="end" className="w-64">
         <DropdownMenuGroup>
-          <DropdownMenuLabel className="text-[10px] uppercase tracking-widest text-muted-foreground">Full Backup</DropdownMenuLabel>
+          <DropdownMenuLabel className="text-[10px] uppercase tracking-widest text-muted-foreground">System Backup</DropdownMenuLabel>
           <DropdownMenuItem 
-            onSelect={(e) => exportFullDashboard(e)} 
+            onSelect={exportFullDashboard} 
             className="gap-2 font-medium cursor-pointer"
           >
             <Layout className="h-3.5 w-3.5 text-primary" />
-            Complete Dashboard Config
+            Full Configuration JSON
           </DropdownMenuItem>
         </DropdownMenuGroup>
         
         <DropdownMenuSeparator />
         
         <DropdownMenuGroup>
-          <DropdownMenuLabel className="text-[10px] uppercase tracking-widest text-muted-foreground">Individual Datasets</DropdownMenuLabel>
+          <DropdownMenuLabel className="text-[10px] uppercase tracking-widest text-muted-foreground">Dataset Exports</DropdownMenuLabel>
           {datasets.map((dataset) => (
             <DropdownMenuItem 
               key={dataset.id} 
-              onSelect={(e) => exportDatasetOnly(e, dataset.id)} 
+              onSelect={() => exportDatasetOnly(dataset.id)} 
               className="gap-2 cursor-pointer"
             >
               <FileJson className="h-3.5 w-3.5" />

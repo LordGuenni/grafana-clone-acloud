@@ -23,23 +23,29 @@ import {
 } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Plus, Database, Code, Eye } from 'lucide-react';
+import { Plus, Database, Code, Eye, Settings } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
 import { cn } from '@/lib/utils';
 import { PanelRenderer } from './PanelRenderer';
 
-export function AddPanelDialog() {
-  const { datasets, addPanel, addDataset } = useDashboardStore();
+interface PanelDialogProps {
+  mode?: 'add' | 'edit';
+  panelToEdit?: PanelConfig;
+  trigger?: React.ReactNode;
+}
+
+export function PanelDialog({ mode = 'add', panelToEdit, trigger }: PanelDialogProps) {
+  const { datasets, addPanel, updatePanel, addDataset } = useDashboardStore();
   const [open, setOpen] = useState(false);
   const [activeTab, setActiveTab] = useState('existing');
 
   // Form State
-  const [title, setTitle] = useState('New Panel');
-  const [type, setType] = useState<ChartType>('line');
-  const [dataSourceId, setDataSourceId] = useState('');
-  const [xKey, setXKey] = useState('');
-  const [yKey, setYKey] = useState('');
-  const [aggregation, setAggregation] = useState<PanelConfig['aggregation']>('sum');
+  const [title, setTitle] = useState(panelToEdit?.title || (mode === 'add' ? 'New Panel' : 'Edit Panel'));
+  const [type, setType] = useState<ChartType>(panelToEdit?.type || 'line');
+  const [dataSourceId, setDataSourceId] = useState(panelToEdit?.dataSourceId || '');
+  const [xKey, setXKey] = useState(panelToEdit?.xKey || '');
+  const [yKey, setYKey] = useState(panelToEdit?.yKey || '');
+  const [aggregation, setAggregation] = useState<PanelConfig['aggregation']>(panelToEdit?.aggregation || 'sum');
 
   // Manual JSON State
   const [manualJson, setManualJson] = useState('');
@@ -47,6 +53,18 @@ export function AddPanelDialog() {
   const [tempManualDataset, setTempManualDataset] = useState<Dataset | null>(null);
 
   const selectedDataset = datasets.find((d) => d.id === dataSourceId);
+
+  // Initialize fields if editing
+  useEffect(() => {
+    if (open && mode === 'edit' && panelToEdit) {
+      setTitle(panelToEdit.title);
+      setType(panelToEdit.type);
+      setDataSourceId(panelToEdit.dataSourceId);
+      setXKey(panelToEdit.xKey);
+      setYKey(panelToEdit.yKey);
+      setAggregation(panelToEdit.aggregation);
+    }
+  }, [open, mode, panelToEdit]);
 
   // Update temp dataset for manual JSON preview
   useEffect(() => {
@@ -72,7 +90,7 @@ export function AddPanelDialog() {
     if (!dsId || !xKey || !yKey) return null;
 
     return {
-      id: 'preview',
+      id: panelToEdit?.id || 'preview',
       title,
       type,
       dataSourceId: dsId,
@@ -80,17 +98,9 @@ export function AddPanelDialog() {
       yKey,
       aggregation,
     };
-  }, [title, type, dataSourceId, xKey, yKey, aggregation, activeTab]);
+  }, [title, type, dataSourceId, xKey, yKey, aggregation, activeTab, panelToEdit]);
 
-  // Use a hacky store-like access for PanelRenderer preview
-  const previewDatasets = useMemo(() => {
-    if (activeTab === 'manual' && tempManualDataset) {
-      return [...datasets, tempManualDataset];
-    }
-    return datasets;
-  }, [datasets, tempManualDataset, activeTab]);
-
-  const handleAdd = () => {
+  const handleSave = () => {
     let finalDataSourceId = dataSourceId;
 
     if (activeTab === 'manual') {
@@ -118,28 +128,40 @@ export function AddPanelDialog() {
 
     if (!finalDataSourceId || !xKey || !yKey) return;
 
-    const id = uuidv4();
-    const newPanel: PanelConfig = {
-      id,
-      title,
-      type,
-      dataSourceId: finalDataSourceId,
-      xKey,
-      yKey,
-      aggregation,
-    };
+    if (mode === 'add') {
+      const id = uuidv4();
+      const newPanel: PanelConfig = {
+        id,
+        title,
+        type,
+        dataSourceId: finalDataSourceId,
+        xKey,
+        yKey,
+        aggregation,
+      };
 
-    const newLayout: PanelLayout = {
-      i: id,
-      x: 0,
-      y: Infinity,
-      w: 6,
-      h: 4,
-    };
+      const newLayout: PanelLayout = {
+        i: id,
+        x: 0,
+        y: Infinity,
+        w: 6,
+        h: 4,
+      };
 
-    addPanel(newPanel, newLayout);
+      addPanel(newPanel, newLayout);
+    } else if (mode === 'edit' && panelToEdit) {
+      updatePanel(panelToEdit.id, {
+        title,
+        type,
+        dataSourceId: finalDataSourceId,
+        xKey,
+        yKey,
+        aggregation,
+      });
+    }
+
     setOpen(false);
-    resetForm();
+    if (mode === 'add') resetForm();
   };
 
   const resetForm = () => {
@@ -175,17 +197,27 @@ export function AddPanelDialog() {
     }
   };
 
+  const defaultTrigger = mode === 'add' ? (
+    <Button className={cn(buttonVariants({ variant: 'default' }), 'cursor-pointer gap-2')}>
+      <Plus className="h-4 w-4" /> Add Panel
+    </Button>
+  ) : (
+    <Button variant="ghost" size="icon-sm" className="h-7 w-7 rounded-md">
+      <Settings className="h-3.5 w-3.5" />
+    </Button>
+  );
+
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger className={cn(buttonVariants({ variant: 'default' }), 'cursor-pointer gap-2')}>
-        <Plus className="h-4 w-4" /> Add Panel
+      <DialogTrigger asChild>
+        {trigger || defaultTrigger}
       </DialogTrigger>
       <DialogContent className="sm:max-w-[800px] gap-0 p-0 overflow-hidden border-none shadow-2xl">
         <div className="flex flex-col md:flex-row h-full max-h-[90vh]">
           {/* Configuration Side */}
           <div className="flex-1 p-6 space-y-4 border-r bg-background overflow-y-auto">
             <DialogHeader>
-              <DialogTitle>Configure Panel</DialogTitle>
+              <DialogTitle>{mode === 'add' ? 'Configure New Panel' : 'Edit Panel'}</DialogTitle>
             </DialogHeader>
             
             <div className="grid gap-4 py-2">
@@ -303,8 +335,8 @@ export function AddPanelDialog() {
               </div>
             </div>
 
-            <Button onClick={handleAdd} className="w-full mt-4 h-10 shadow-lg shadow-primary/20" disabled={jsonError !== null || (!dataSourceId && !manualJson) || !xKey || !yKey}>
-              Create Panel
+            <Button onClick={handleSave} className="w-full mt-4 h-10 shadow-lg shadow-primary/20" disabled={jsonError !== null || (!dataSourceId && !manualJson) || !xKey || !yKey}>
+              {mode === 'add' ? 'Create Panel' : 'Save Changes'}
             </Button>
           </div>
 

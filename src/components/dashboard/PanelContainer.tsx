@@ -4,11 +4,11 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { PanelConfig } from '@/types/dashboard';
 import { useDashboardStore } from '@/store/useDashboardStore';
-import { X, Settings, GripHorizontal } from 'lucide-react';
+import { X, GripHorizontal } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { PanelRenderer } from './PanelRenderer';
-
 import { motion } from 'framer-motion';
+import { PanelDialog } from './PanelDialog';
 
 interface PanelContainerProps {
   panel: PanelConfig;
@@ -30,14 +30,15 @@ export function PanelContainer({ panel }: PanelContainerProps) {
             <div className="panel-drag-handle cursor-grab active:cursor-grabbing p-1 hover:bg-muted rounded-md text-muted-foreground transition-colors">
               <GripHorizontal className="h-4 w-4" />
             </div>
-            <CardTitle className="text-xs font-bold tracking-tight uppercase text-muted-foreground/80">
+            <CardTitle className="text-xs font-bold tracking-tight uppercase text-muted-foreground/80 truncate max-w-[150px]">
               {panel.title}
             </CardTitle>
           </div>
           <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-            <Button variant="ghost" size="icon-sm" className="h-7 w-7 rounded-md">
-              <Settings className="h-3.5 w-3.5" />
-            </Button>
+            <PanelDialog 
+              mode="edit" 
+              panelToEdit={panel} 
+            />
             <Button
               variant="ghost"
               size="icon-sm"
