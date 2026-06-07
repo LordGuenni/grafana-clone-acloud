@@ -11,10 +11,6 @@ export function SampleDataButton() {
   const { addDataset, addPanel, datasets, panels } = useDashboardStore();
 
   const loadSampleData = () => {
-    // If panels already exist, we might not want to overwrite them or add more
-    // but the user specifically requested "Load Infrastructure Demo", so we'll append.
-    // We check by dataset name to avoid duplicate datasets.
-    
     let datasetId = datasets.find(d => d.name === 'Cloud Infrastructure Stats')?.id;
     
     if (!datasetId) {
@@ -42,35 +38,36 @@ export function SampleDataButton() {
       });
     }
 
-    // Only add panels if they don't exist yet to avoid cluttering on multiple clicks
     if (panels.length > 0) return;
 
-    // 1. Line Chart: Revenue Trend
+    // 1. Line Chart: Revenue by Region (Multi-series)
     const revenueId = uuidv4();
     addPanel({
       id: revenueId,
-      title: 'Annual Revenue Growth ($)',
+      title: 'Regional Revenue Growth ($)',
       type: 'line',
       dataSourceId: datasetId,
       xKey: 'month',
       yKey: 'revenue',
+      groupBy: 'region',
       aggregation: 'sum',
     }, {
-      i: revenueId, x: 0, y: 0, w: 8, h: 4,
+      i: revenueId, x: 0, y: 0, w: 12, h: 4,
     });
 
-    // 2. Bar Chart: User Growth
+    // 2. Bar Chart: User Growth by Region (Multi-series)
     const userId = uuidv4();
     addPanel({
       id: userId,
-      title: 'Active Users by Month',
+      title: 'Regional Active Users',
       type: 'bar',
       dataSourceId: datasetId,
       xKey: 'month',
       yKey: 'users',
+      groupBy: 'region',
       aggregation: 'sum',
     }, {
-      i: userId, x: 8, y: 0, w: 4, h: 4,
+      i: userId, x: 0, y: 4, w: 6, h: 4,
     });
 
     // 3. Area Chart: Latency Reduction
@@ -84,21 +81,7 @@ export function SampleDataButton() {
       yKey: 'latency',
       aggregation: 'avg',
     }, {
-      i: latencyId, x: 0, y: 4, w: 6, h: 4,
-    });
-
-    // 4. Pie Chart: Region Distribution (Revenue)
-    const pieId = uuidv4();
-    addPanel({
-      id: pieId,
-      title: 'Revenue Share by Region',
-      type: 'pie',
-      dataSourceId: datasetId,
-      xKey: 'region',
-      yKey: 'revenue',
-      aggregation: 'sum',
-    }, {
-      i: pieId, x: 6, y: 4, w: 6, h: 4,
+      i: latencyId, x: 6, y: 4, w: 6, h: 4,
     });
   };
 
