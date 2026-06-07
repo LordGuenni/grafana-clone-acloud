@@ -69,11 +69,19 @@ export function PanelRenderer({ panel, previewData }: PanelRendererProps) {
     let filteredData = rawData;
     
     if (globalFilter && !previewData) {
-      filteredData = rawData.filter((row: any) => 
-        Object.values(row).some(val => 
-          String(val).toLowerCase().includes(globalFilter.toLowerCase())
-        )
-      );
+      // Split by '&' and trim whitespace to allow "Europe & Asia" style searches
+      const keywords = globalFilter.split('&').map(k => k.trim().toLowerCase()).filter(k => k !== '');
+      
+      filteredData = rawData.filter((row: any) => {
+        const rowValues = Object.values(row).map(val => String(val).toLowerCase());
+        
+        // Row must contain AT LEAST ONE of the keywords (OR behavior)
+        // Note: Usually "X & Y" implies AND, but for regional filtering "Europe & Asia"
+        // typically means "Show me both". Let's implement OR logic for multiple keywords.
+        return keywords.some(keyword => 
+          rowValues.some(val => val.includes(keyword))
+        );
+      });
     }
     
     return aggregateData(filteredData, panel);
@@ -103,8 +111,8 @@ export function PanelRenderer({ panel, previewData }: PanelRendererProps) {
   };
 
   const gridStroke = isDark ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.1)";
-  const labelColor = isDark ? "#f3f4f6" : "#4b5563"; // Gray 100 vs Gray 600
-  const dotStroke = isDark ? "#0f172a" : "#ffffff"; // Deep slate vs white
+  const labelColor = isDark ? "#f3f4f6" : "#4b5563"; 
+  const dotStroke = isDark ? "#0f172a" : "#ffffff"; 
 
   const renderChart = () => {
     switch (panel.type) {
