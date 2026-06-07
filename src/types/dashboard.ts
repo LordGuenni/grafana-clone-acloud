@@ -7,6 +7,7 @@ export interface PanelConfig {
   dataSourceId: string;
   xKey: string;
   yKey: string;
+  groupBy?: string;
   aggregation: 'sum' | 'avg' | 'count' | 'min' | 'max';
 }
 

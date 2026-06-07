@@ -1,58 +1,69 @@
 import { PanelConfig } from '@/types/dashboard';
 
 export function aggregateData(data: any[], config: PanelConfig) {
-  const { xKey, yKey, aggregation } = config;
+  const { xKey, yKey, aggregation, groupBy } = config;
 
   if (!xKey || !yKey || !data.length) return [];
 
-  const grouped = data.reduce((acc: any, curr) => {
-    const key = String(curr[xKey] ?? 'Unknown');
-    if (!acc[key]) {
-      acc[key] = [];
-    }
-    // Handle both numbers and strings that look like numbers
-    const rawValue = curr[yKey];
-    const numericValue = typeof rawValue === 'number' ? rawValue : parseFloat(rawValue);
-    
-    if (!isNaN(numericValue)) {
-      acc[key].push(numericValue);
-    }
+  // 1. Group data by X-axis key
+  const groupedByX = data.reduce((acc: any, curr) => {
+    const xVal = String(curr[xKey] ?? 'Unknown');
+    if (!acc[xVal]) acc[xVal] = [];
+    acc[xVal].push(curr);
     return acc;
   }, {});
 
-  return Object.keys(grouped).map((key) => {
-    const values = grouped[key];
-    let value = 0;
+  // 2. Identify all groups if groupBy is set
+  const allGroups = groupBy 
+    ? Array.from(new Set(data.map(d => String(d[groupBy] ?? 'Other'))))
+    : ['Value'];
 
-    if (values.length > 0) {
-      switch (aggregation) {
-        case 'sum':
-          value = values.reduce((a: number, b: number) => a + b, 0);
-          break;
-        case 'avg':
-          value = values.reduce((a: number, b: number) => a + b, 0) / values.length;
-          break;
-        case 'count':
-          value = values.length;
-          break;
-        case 'min':
-          value = Math.min(...values);
-          break;
-        case 'max':
-          value = Math.max(...values);
-          break;
-        default:
-          value = 0;
-      }
-    } else if (aggregation === 'count') {
-       // If no numeric values, count could still be relevant if we counted rows, 
-       // but here we specifically count rows with valid yKey values.
-       value = 0;
+  // 3. Process each X-axis group
+  return Object.keys(groupedByX).map((xVal) => {
+    const result: any = { [xKey]: xVal };
+    const rowsInX = groupedByX[xVal];
+
+    if (groupBy) {
+      // Pivot data for each subgroup
+      allGroups.forEach(groupName => {
+        const rowsInGroup = rowsInX.filter((d: any) => String(d[groupBy] ?? 'Other') === groupName);
+        result[groupName] = calculateValue(rowsInGroup, yKey, aggregation);
+      });
+    } else {
+      result[yKey] = calculateValue(rowsInX, yKey, aggregation);
     }
 
-    return {
-      [xKey]: key,
-      [yKey]: value,
-    };
+    return result;
   });
+}
+
+function calculateValue(rows: any[], yKey: string, aggregation: string) {
+  const values = rows
+    .map(r => {
+      const val = r[yKey];
+      return typeof val === 'number' ? val : parseFloat(val);
+    })
+    .filter(v => !isNaN(v));
+
+  if (values.length === 0) return 0;
+
+  switch (aggregation) {
+    case 'sum':
+      return values.reduce((a, b) => a + b, 0);
+    case 'avg':
+      return values.reduce((a, b) => a + b, 0) / values.length;
+    case 'count':
+      return values.length;
+    case 'min':
+      return Math.min(...values);
+    case 'max':
+      return Math.max(...values);
+    default:
+      return 0;
+  }
+}
+
+export function getSeriesKeys(data: any[], xKey: string): string[] {
+  if (data.length === 0) return [];
+  return Object.keys(data[0]).filter(k => k !== xKey);
 }

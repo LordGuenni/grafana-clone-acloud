@@ -45,6 +45,7 @@ export function PanelDialog({ mode = 'add', panelToEdit, trigger }: PanelDialogP
   const [dataSourceId, setDataSourceId] = useState(panelToEdit?.dataSourceId || '');
   const [xKey, setXKey] = useState(panelToEdit?.xKey || '');
   const [yKey, setYKey] = useState(panelToEdit?.yKey || '');
+  const [groupBy, setGroupBy] = useState(panelToEdit?.groupBy || '');
   const [aggregation, setAggregation] = useState<PanelConfig['aggregation']>(panelToEdit?.aggregation || 'sum');
 
   // Manual JSON State
@@ -62,6 +63,7 @@ export function PanelDialog({ mode = 'add', panelToEdit, trigger }: PanelDialogP
       setDataSourceId(panelToEdit.dataSourceId);
       setXKey(panelToEdit.xKey);
       setYKey(panelToEdit.yKey);
+      setGroupBy(panelToEdit.groupBy || '');
       setAggregation(panelToEdit.aggregation);
     }
   }, [open, mode, panelToEdit]);
@@ -96,9 +98,10 @@ export function PanelDialog({ mode = 'add', panelToEdit, trigger }: PanelDialogP
       dataSourceId: dsId,
       xKey,
       yKey,
+      groupBy: groupBy || undefined,
       aggregation,
     };
-  }, [title, type, dataSourceId, xKey, yKey, aggregation, activeTab, panelToEdit]);
+  }, [title, type, dataSourceId, xKey, yKey, groupBy, aggregation, activeTab, panelToEdit]);
 
   const handleSave = () => {
     let finalDataSourceId = dataSourceId;
@@ -128,36 +131,24 @@ export function PanelDialog({ mode = 'add', panelToEdit, trigger }: PanelDialogP
 
     if (!finalDataSourceId || !xKey || !yKey) return;
 
+    const panelData: Partial<PanelConfig> = {
+      title,
+      type,
+      dataSourceId: finalDataSourceId,
+      xKey,
+      yKey,
+      groupBy: groupBy || undefined,
+      aggregation,
+    };
+
     if (mode === 'add') {
       const id = uuidv4();
-      const newPanel: PanelConfig = {
-        id,
-        title,
-        type,
-        dataSourceId: finalDataSourceId,
-        xKey,
-        yKey,
-        aggregation,
-      };
-
       const newLayout: PanelLayout = {
-        i: id,
-        x: 0,
-        y: Infinity,
-        w: 6,
-        h: 4,
+        i: id, x: 0, y: Infinity, w: 6, h: 4,
       };
-
-      addPanel(newPanel, newLayout);
+      addPanel({ ...panelData, id } as PanelConfig, newLayout);
     } else if (mode === 'edit' && panelToEdit) {
-      updatePanel(panelToEdit.id, {
-        title,
-        type,
-        dataSourceId: finalDataSourceId,
-        xKey,
-        yKey,
-        aggregation,
-      });
+      updatePanel(panelToEdit.id, panelData);
     }
 
     setOpen(false);
@@ -170,6 +161,7 @@ export function PanelDialog({ mode = 'add', panelToEdit, trigger }: PanelDialogP
     setDataSourceId('');
     setXKey('');
     setYKey('');
+    setGroupBy('');
     setAggregation('sum');
     setManualJson('');
     setJsonError(null);
@@ -206,6 +198,8 @@ export function PanelDialog({ mode = 'add', panelToEdit, trigger }: PanelDialogP
       <Settings className="h-3.5 w-3.5" />
     </Button>
   );
+
+  const availableHeaders = selectedDataset?.headers || tempManualDataset?.headers || [];
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -289,26 +283,26 @@ export function PanelDialog({ mode = 'add', panelToEdit, trigger }: PanelDialogP
 
               <div className="grid grid-cols-2 gap-3">
                  <div className="space-y-1.5">
-                    <Label className="text-[10px] font-bold uppercase text-muted-foreground ml-1">X-Axis</Label>
+                    <Label className="text-[10px] font-bold uppercase text-muted-foreground ml-1">X-Axis (Category)</Label>
                     <Select value={xKey} onValueChange={(v) => setXKey(v || '')}>
                       <SelectTrigger className="h-9">
                         <SelectValue placeholder="Key" />
                       </SelectTrigger>
                       <SelectContent>
-                        {(selectedDataset?.headers || (tempManualDataset?.headers || [])).map((h) => (
+                        {availableHeaders.map((h) => (
                           <SelectItem key={h} value={h}>{h}</SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
                  </div>
                  <div className="space-y-1.5">
-                    <Label className="text-[10px] font-bold uppercase text-muted-foreground ml-1">Y-Axis</Label>
+                    <Label className="text-[10px] font-bold uppercase text-muted-foreground ml-1">Y-Axis (Value)</Label>
                     <Select value={yKey} onValueChange={(v) => setYKey(v || '')}>
                       <SelectTrigger className="h-9">
                         <SelectValue placeholder="Key" />
                       </SelectTrigger>
                       <SelectContent>
-                        {(selectedDataset?.headers || (tempManualDataset?.headers || [])).map((h) => (
+                        {availableHeaders.map((h) => (
                           <SelectItem key={h} value={h}>{h}</SelectItem>
                         ))}
                       </SelectContent>
@@ -316,20 +310,36 @@ export function PanelDialog({ mode = 'add', panelToEdit, trigger }: PanelDialogP
                  </div>
               </div>
 
-              <div className="space-y-1.5">
-                <Label className="text-[10px] font-bold uppercase text-muted-foreground ml-1">Aggregation</Label>
-                <Select value={aggregation} onValueChange={(v) => setAggregation(v as any || 'sum')}>
-                  <SelectTrigger className="h-9">
-                    <SelectValue placeholder="Method" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="sum">Sum</SelectItem>
-                    <SelectItem value="avg">Average</SelectItem>
-                    <SelectItem value="count">Count</SelectItem>
-                    <SelectItem value="min">Minimum</SelectItem>
-                    <SelectItem value="max">Maximum</SelectItem>
-                  </SelectContent>
-                </Select>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <Label className="text-[10px] font-bold uppercase text-muted-foreground ml-1">Group By (Series)</Label>
+                  <Select value={groupBy} onValueChange={(v) => setGroupBy(v || '')}>
+                    <SelectTrigger className="h-9">
+                      <SelectValue placeholder="None" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="_none_">None</SelectItem>
+                      {availableHeaders.filter(h => h !== xKey).map((h) => (
+                        <SelectItem key={h} value={h}>{h}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-[10px] font-bold uppercase text-muted-foreground ml-1">Aggregation</Label>
+                  <Select value={aggregation} onValueChange={(v) => setAggregation(v as any || 'sum')}>
+                    <SelectTrigger className="h-9">
+                      <SelectValue placeholder="Method" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="sum">Sum</SelectItem>
+                      <SelectItem value="avg">Average</SelectItem>
+                      <SelectItem value="count">Count</SelectItem>
+                      <SelectItem value="min">Minimum</SelectItem>
+                      <SelectItem value="max">Maximum</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
             </div>
 
