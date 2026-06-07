@@ -4,6 +4,7 @@ import React, { useMemo } from 'react';
 import { useDashboardStore } from '@/store/useDashboardStore';
 import { PanelConfig } from '@/types/dashboard';
 import { aggregateData } from '@/lib/data-utils';
+import { useTheme } from 'next-themes';
 import {
   ResponsiveContainer,
   LineChart,
@@ -23,27 +24,38 @@ import {
 } from 'recharts';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
 
-const COLORS = [
-  'hsl(var(--chart-1))',
-  'hsl(var(--chart-2))',
-  'hsl(var(--chart-3))',
-  'hsl(var(--chart-4))',
-  'hsl(var(--chart-5))',
-  '#3b82f6',
-  '#10b981',
-  '#f59e0b',
-  '#ef4444',
-  '#8b5cf6'
+// Premium High-Luminosity Colors specifically for Dark Mode
+const DARK_COLORS = [
+  '#38bdf8', // Neon Blue
+  '#34d399', // Emerald
+  '#fbbf24', // Amber
+  '#818cf8', // Indigo
+  '#f472b6', // Pink
+  '#fb7185', // Rose
+];
+
+// Softer Professional Colors for Light Mode
+const LIGHT_COLORS = [
+  '#0284c7', // Sky 700
+  '#059669', // Emerald 600
+  '#d97706', // Amber 600
+  '#4f46e5', // Indigo 600
+  '#db2777', // Pink 600
+  '#e11d48', // Rose 600
 ];
 
 interface PanelRendererProps {
   panel: PanelConfig;
-  previewData?: any[]; // Optional prop for live preview in dialog
+  previewData?: any[]; 
 }
 
 export function PanelRenderer({ panel, previewData }: PanelRendererProps) {
   const datasets = useDashboardStore((state) => state.datasets);
   const globalFilter = useDashboardStore((state) => state.globalFilter);
+  const { theme } = useTheme();
+
+  const isDark = theme === 'dark';
+  const COLORS = isDark ? DARK_COLORS : LIGHT_COLORS;
 
   const dataset = useMemo(
     () => datasets.find((d) => d.id === panel.dataSourceId),
@@ -90,10 +102,9 @@ export function PanelRenderer({ panel, previewData }: PanelRendererProps) {
     },
   };
 
-  // Visibility and contrast settings for Dark Mode
-  const gridStroke = "hsl(var(--border) / 0.3)";
-  const labelColor = "hsl(var(--muted-foreground))";
-  const dotStroke = "var(--background)";
+  const gridStroke = isDark ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.1)";
+  const labelColor = isDark ? "#f3f4f6" : "#4b5563"; // Gray 100 vs Gray 600
+  const dotStroke = isDark ? "#0f172a" : "#ffffff"; // Deep slate vs white
 
   const renderChart = () => {
     switch (panel.type) {
@@ -120,9 +131,9 @@ export function PanelRenderer({ panel, previewData }: PanelRendererProps) {
               type="monotone"
               dataKey={panel.yKey}
               stroke={COLORS[0]}
-              strokeWidth={2}
-              dot={{ r: 3, fill: COLORS[0], strokeWidth: 1.5, stroke: dotStroke }}
-              activeDot={{ r: 5, strokeWidth: 0 }}
+              strokeWidth={3}
+              dot={{ r: 4, fill: COLORS[0], strokeWidth: 2, stroke: dotStroke }}
+              activeDot={{ r: 6, strokeWidth: 0 }}
               animationDuration={1000}
             />
           </LineChart>
@@ -153,7 +164,7 @@ export function PanelRenderer({ panel, previewData }: PanelRendererProps) {
               animationDuration={1000}
             >
                {processedData.map((_, index) => (
-                <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} fillOpacity={0.9} />
+                <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
               ))}
             </Bar>
           </BarChart>
@@ -163,7 +174,7 @@ export function PanelRenderer({ panel, previewData }: PanelRendererProps) {
           <AreaChart data={processedData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
             <defs>
               <linearGradient id={`gradient-${panel.id}`} x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor={COLORS[2]} stopOpacity={0.4}/>
+                <stop offset="5%" stopColor={COLORS[2]} stopOpacity={0.5}/>
                 <stop offset="95%" stopColor={COLORS[2]} stopOpacity={0}/>
               </linearGradient>
             </defs>
@@ -188,7 +199,7 @@ export function PanelRenderer({ panel, previewData }: PanelRendererProps) {
               dataKey={panel.yKey}
               fill={`url(#gradient-${panel.id})`}
               stroke={COLORS[2]}
-              strokeWidth={2}
+              strokeWidth={3}
               animationDuration={1000}
             />
           </AreaChart>
