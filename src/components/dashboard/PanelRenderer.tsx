@@ -197,7 +197,7 @@ export function PanelRenderer({ panel }: PanelRendererProps) {
               innerRadius={60}
               outerRadius={80}
               paddingAngle={5}
-              label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+              label={({ name, percent }) => `${name} ${((percent || 0) * 100).toFixed(0)}%`}
               animationDuration={1000}
             >
               {processedData.map((_, index) => (
