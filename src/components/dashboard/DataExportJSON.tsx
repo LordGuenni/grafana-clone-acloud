@@ -17,9 +17,38 @@ import {
 export function DataExporter() {
   const { datasets, panels, layouts } = useDashboardStore();
 
-  const triggerDownload = (filename: string, data: any) => {
+  const handleExport = (type: 'full' | 'dataset', datasetId?: string) => {
+    console.log(`Starting export: ${type} ${datasetId || ''}`);
+    
     try {
-      const dataStr = JSON.stringify(data, null, 2);
+      let exportData: any;
+      let filename: string;
+
+      if (type === 'full') {
+        exportData = {
+          type: 'nexus-insight-dashboard-config',
+          version: '1.0',
+          timestamp: new Date().toISOString(),
+          datasets,
+          panels,
+          layouts,
+        };
+        filename = `nexus_full_backup_${new Date().toISOString().split('T')[0]}.json`;
+      } else {
+        const dataset = datasets.find((d) => d.id === datasetId);
+        if (!dataset) return;
+
+        exportData = {
+          type: 'nexus-insight-dataset-export',
+          dataset,
+          relatedPanels: panels.filter(p => p.dataSourceId === datasetId),
+          relatedLayouts: layouts.filter(l => panels.some(p => p.id === l.i && p.dataSourceId === datasetId))
+        };
+        const safeName = dataset.name.replace(/[^a-z0-9]/gi, '_').toLowerCase();
+        filename = `${safeName}_dataset.json`;
+      }
+
+      const dataStr = JSON.stringify(exportData, null, 2);
       const blob = new Blob([dataStr], { type: 'application/json' });
       const url = URL.createObjectURL(blob);
       
@@ -27,51 +56,17 @@ export function DataExporter() {
       link.href = url;
       link.download = filename;
       
-      // Append to document to ensure visibility/validity in all browsers
-      document.body.appendChild(link);
-      
-      // Trigger click immediately to preserve User Gesture context in production environments
+      // Direct click within the same execution stack
       link.click();
       
-      // Cleanup
-      document.body.removeChild(link);
+      // Cleanup after a delay
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
       
-      // Revoke after a longer delay to ensure the browser has initiated the download
-      setTimeout(() => {
-        URL.revokeObjectURL(url);
-      }, 5000);
-      
+      console.log('Export download triggered');
     } catch (error) {
-      console.error('NexusInsight Export Error:', error);
-      alert('Failed to generate export file. Please check console for details.');
+      console.error('Export Error:', error);
+      alert('Could not generate the export file. Please check the console for details.');
     }
-  };
-
-  const exportFullDashboard = () => {
-    const exportData = {
-      type: 'nexus-insight-dashboard-config',
-      version: '1.0',
-      timestamp: new Date().toISOString(),
-      datasets,
-      panels,
-      layouts,
-    };
-    triggerDownload(`nexus_full_backup_${new Date().toISOString().split('T')[0]}.json`, exportData);
-  };
-
-  const exportDatasetOnly = (datasetId: string) => {
-    const dataset = datasets.find((d) => d.id === datasetId);
-    if (!dataset) return;
-
-    const exportData = {
-      type: 'nexus-insight-dataset-export',
-      dataset,
-      relatedPanels: panels.filter(p => p.dataSourceId === datasetId),
-      relatedLayouts: layouts.filter(l => panels.some(p => p.id === l.i && p.dataSourceId === datasetId))
-    };
-
-    const safeName = dataset.name.replace(/[^a-z0-9]/gi, '_').toLowerCase();
-    triggerDownload(`${safeName}_dataset.json`, exportData);
   };
 
   if (datasets.length === 0) return null;
@@ -93,8 +88,9 @@ export function DataExporter() {
       <DropdownMenuContent align="end" className="w-64">
         <DropdownMenuGroup>
           <DropdownMenuLabel className="text-[10px] uppercase tracking-widest text-muted-foreground">System Backup</DropdownMenuLabel>
+          {/* Using onClick directly on the item to ensure user gesture is preserved */}
           <DropdownMenuItem 
-            onSelect={exportFullDashboard} 
+            onClick={() => handleExport('full')} 
             className="gap-2 font-medium cursor-pointer"
           >
             <Layout className="h-3.5 w-3.5 text-primary" />
@@ -109,7 +105,7 @@ export function DataExporter() {
           {datasets.map((dataset) => (
             <DropdownMenuItem 
               key={dataset.id} 
-              onSelect={() => exportDatasetOnly(dataset.id)} 
+              onClick={() => handleExport('dataset', dataset.id)} 
               className="gap-2 cursor-pointer"
             >
               <FileJson className="h-3.5 w-3.5" />
