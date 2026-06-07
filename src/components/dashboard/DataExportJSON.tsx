@@ -17,6 +17,24 @@ import {
 export function DataExporter() {
   const { datasets, panels, layouts } = useDashboardStore();
 
+  const triggerDownload = (filename: string, data: any) => {
+    try {
+      const dataStr = JSON.stringify(data, null, 2);
+      const blob = new Blob([dataStr], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Export failed:', error);
+    }
+  };
+
   const exportFullDashboard = () => {
     const exportData = {
       type: 'nexus-insight-dashboard-config',
@@ -26,14 +44,7 @@ export function DataExporter() {
       panels,
       layouts,
     };
-
-    const dataStr = JSON.stringify(exportData, null, 2);
-    const dataUri = 'data:application/json;charset=utf-8,' + encodeURIComponent(dataStr);
-    
-    const linkElement = document.createElement('a');
-    linkElement.setAttribute('href', dataUri);
-    linkElement.setAttribute('download', `nexus_dashboard_config_${new Date().getTime()}.json`);
-    linkElement.click();
+    triggerDownload(`nexus_dashboard_config_${new Date().getTime()}.json`, exportData);
   };
 
   const exportDatasetOnly = (datasetId: string) => {
@@ -47,15 +58,8 @@ export function DataExporter() {
       relatedLayouts: layouts.filter(l => panels.some(p => p.id === l.i && p.dataSourceId === datasetId))
     };
 
-    const dataStr = JSON.stringify(exportData, null, 2);
-    const dataUri = 'data:application/json;charset=utf-8,' + encodeURIComponent(dataStr);
-
     const exportFileDefaultName = `${dataset.name.replace(/\.[^/.]+$/, "")}_full_config.json`;
-
-    const linkElement = document.createElement('a');
-    linkElement.setAttribute('href', dataUri);
-    linkElement.setAttribute('download', exportFileDefaultName);
-    linkElement.click();
+    triggerDownload(exportFileDefaultName, exportData);
   };
 
   if (datasets.length === 0) return null;
@@ -77,7 +81,7 @@ export function DataExporter() {
       <DropdownMenuContent align="end" className="w-64">
         <DropdownMenuGroup>
           <DropdownMenuLabel className="text-[10px] uppercase tracking-widest text-muted-foreground">Full Backup</DropdownMenuLabel>
-          <DropdownMenuItem onSelect={exportFullDashboard} className="gap-2 font-medium">
+          <DropdownMenuItem onSelect={exportFullDashboard} className="gap-2 font-medium cursor-pointer">
             <Layout className="h-3.5 w-3.5 text-primary" />
             Complete Dashboard Config
           </DropdownMenuItem>
@@ -88,9 +92,13 @@ export function DataExporter() {
         <DropdownMenuGroup>
           <DropdownMenuLabel className="text-[10px] uppercase tracking-widest text-muted-foreground">Individual Datasets</DropdownMenuLabel>
           {datasets.map((dataset) => (
-            <DropdownMenuItem key={dataset.id} onSelect={() => exportDatasetOnly(dataset.id)} className="gap-2">
+            <DropdownMenuItem 
+              key={dataset.id} 
+              onSelect={() => exportDatasetOnly(dataset.id)} 
+              className="gap-2 cursor-pointer"
+            >
               <FileJson className="h-3.5 w-3.5" />
-              {dataset.name}
+              <span className="truncate">{dataset.name}</span>
             </DropdownMenuItem>
           ))}
         </DropdownMenuGroup>
