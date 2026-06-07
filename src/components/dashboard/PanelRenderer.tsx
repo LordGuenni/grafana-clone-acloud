@@ -97,9 +97,9 @@ export function PanelRenderer({ panel, previewData }: PanelRendererProps) {
                 type="monotone"
                 dataKey={key}
                 stroke={COLORS[index % COLORS.length]}
-                strokeWidth={2.5}
-                dot={{ r: 3, fill: COLORS[index % COLORS.length], strokeWidth: 1.5, stroke: dotStroke }}
-                activeDot={{ r: 5, strokeWidth: 0 }}
+                strokeWidth={3}
+                dot={{ r: 4, fill: COLORS[index % COLORS.length], strokeWidth: 2, stroke: dotStroke }}
+                activeDot={{ r: 6, strokeWidth: 0 }}
                 animationDuration={1000}
               />
             ))}
@@ -130,7 +130,7 @@ export function PanelRenderer({ panel, previewData }: PanelRendererProps) {
             <defs>
               {seriesKeys.map((key, index) => (
                 <linearGradient key={`grad-${key}`} id={`gradient-${panel.id}-${index}`} x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor={COLORS[index % COLORS.length]} stopOpacity={0.4}/>
+                  <stop offset="5%" stopColor={COLORS[index % COLORS.length]} stopOpacity={0.5}/>
                   <stop offset="95%" stopColor={COLORS[index % COLORS.length]} stopOpacity={0}/>
                 </linearGradient>
               ))}
@@ -147,7 +147,7 @@ export function PanelRenderer({ panel, previewData }: PanelRendererProps) {
                 dataKey={key}
                 fill={`url(#gradient-${panel.id}-${index})`}
                 stroke={COLORS[index % COLORS.length]}
-                strokeWidth={2.5}
+                strokeWidth={3}
                 stackId={panel.aggregation === 'sum' ? "1" : undefined}
                 animationDuration={1000}
               />
@@ -155,9 +155,10 @@ export function PanelRenderer({ panel, previewData }: PanelRendererProps) {
           </AreaChart>
         );
       case 'pie':
+        // Pivot back to categorical format for Pie Chart
         const pieData = processedData.length > 0 ? seriesKeys.map((key, index) => ({
           name: key,
-          value: processedData.reduce((sum, row) => sum + (row[key] || 0), 0)
+          value: processedData.reduce((sum, row) => sum + (Number(row[key]) || 0), 0)
         })) : [];
 
         return (
