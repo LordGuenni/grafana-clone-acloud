@@ -11,10 +11,12 @@ export function SampleDataButton() {
   const { addDataset, addPanel, datasets, panels } = useDashboardStore();
 
   const loadSampleData = () => {
-    let datasetId = datasets.find(d => d.name === 'Cloud Infrastructure Stats')?.id;
+    // Dataset ID from user-provided JSON
+    const datasetId = "f68b4f1a-1254-471a-81e0-03020d238bce";
     
-    if (!datasetId) {
-      datasetId = uuidv4();
+    let datasetExists = datasets.find(d => d.id === datasetId);
+    
+    if (!datasetExists) {
       const data = [
         { month: 'Jan', revenue: 4200, users: 1200, latency: 45, region: 'Europe' },
         { month: 'Feb', revenue: 4800, users: 1450, latency: 42, region: 'Americas' },
@@ -38,6 +40,7 @@ export function SampleDataButton() {
       });
     }
 
+    // Only add panels if the dashboard is empty to avoid duplicates
     if (panels.length > 0) return;
 
     // 1. Line Chart: Revenue by Region (Multi-series)
@@ -52,7 +55,7 @@ export function SampleDataButton() {
       groupBy: 'region',
       aggregation: 'sum',
     }, {
-      i: revenueId, x: 0, y: 0, w: 12, h: 4,
+      i: revenueId, x: 0, y: 0, w: 8, h: 4,
     });
 
     // 2. Bar Chart: User Growth by Region (Multi-series)
@@ -67,35 +70,36 @@ export function SampleDataButton() {
       groupBy: 'region',
       aggregation: 'sum',
     }, {
-      i: userId, x: 0, y: 4, w: 6, h: 4,
+      i: userId, x: 8, y: 0, w: 4, h: 4,
     });
 
     // 3. Area Chart: Global Latency Trend
     const latencyId = uuidv4();
     addPanel({
       id: latencyId,
-      title: 'Network Performance (Latency ms)',
+      title: 'Global Performance (Latency)',
       type: 'area',
       dataSourceId: datasetId,
       xKey: 'month',
       yKey: 'latency',
       aggregation: 'avg',
     }, {
-      i: latencyId, x: 6, y: 4, w: 6, h: 4,
+      i: latencyId, x: 0, y: 4, w: 6, h: 4,
     });
 
-    // 4. Pie Chart: Revenue Share (Imported Config)
-    const pieId = uuidv4();
+    // 4. Pie Chart: Exact configuration from your JSON
+    const pieId = "ec37cc0c-c3e9-4e26-af1b-b95c7598d9a5";
     addPanel({
       id: pieId,
-      title: 'Revenue Share by Region',
-      type: 'pie',
+      title: "Revenue Share by Region",
+      type: "pie",
       dataSourceId: datasetId,
-      xKey: 'region',
-      yKey: 'revenue',
-      aggregation: 'sum',
+      xKey: "region",
+      yKey: "revenue",
+      aggregation: "sum",
+      groupBy: "latency"
     }, {
-      i: pieId, x: 0, y: 8, w: 12, h: 4,
+      i: pieId, x: 6, y: 4, w: 6, h: 4,
     });
   };
 
