@@ -3,7 +3,6 @@
 import React from 'react';
 import { useDashboardStore } from '@/store/useDashboardStore';
 import { Slider } from '@/components/ui/slider';
-import { Label } from '@/components/ui/label';
 import { CalendarRange } from 'lucide-react';
 
 export function GlobalRangeSlider() {
@@ -24,7 +23,7 @@ export function GlobalRangeSlider() {
           onValueChange={(val) => setDataRange(val as [number, number])}
           max={100}
           step={1}
-          minStepsBetweenThumbs={1}
+          minStepsBetweenValues={1}
           className="cursor-pointer"
         />
       </div>
