@@ -55,7 +55,7 @@ export function SampleDataButton() {
       groupBy: 'region',
       aggregation: 'sum',
     }, {
-      i: revenueId, x: 0, y: 0, w: 8, h: 4,
+      i: revenueId, x: 0, y: 0, w: 12, h: 4,
     });
 
     // 2. Bar Chart: User Growth by Region (Multi-series)
@@ -70,7 +70,7 @@ export function SampleDataButton() {
       groupBy: 'region',
       aggregation: 'sum',
     }, {
-      i: userId, x: 8, y: 0, w: 4, h: 4,
+      i: userId, x: 0, y: 4, w: 6, h: 4,
     });
 
     // 3. Area Chart: Global Latency Trend
@@ -84,11 +84,11 @@ export function SampleDataButton() {
       yKey: 'latency',
       aggregation: 'avg',
     }, {
-      i: latencyId, x: 0, y: 4, w: 6, h: 4,
+      i: latencyId, x: 6, y: 4, w: 6, h: 4,
     });
 
-    // 4. Pie Chart: Exact configuration from your JSON
-    const pieId = "ec37cc0c-c3e9-4e26-af1b-b95c7598d9a5";
+    // 4. Pie Chart: Latest exact configuration from your JSON
+    const pieId = "6f1a25b3-e44c-4eec-b5f8-81c3700fc063";
     addPanel({
       id: pieId,
       title: "Revenue Share by Region",
@@ -97,9 +97,9 @@ export function SampleDataButton() {
       xKey: "region",
       yKey: "revenue",
       aggregation: "sum",
-      groupBy: "latency"
+      groupBy: "users"
     }, {
-      i: pieId, x: 6, y: 4, w: 6, h: 4,
+      i: pieId, x: 0, y: 8, w: 12, h: 4,
     });
   };
 
