@@ -9,7 +9,7 @@ import { Upload } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
 
 export function DataImporter() {
-  const { addDataset, setDashboardState } = useDashboardStore();
+  const { addDataset, setDashboardState, addPanel } = useDashboardStore();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleFileUpload = useCallback(
@@ -41,14 +41,20 @@ export function DataImporter() {
           try {
             const data = JSON.parse(content);
             
-            // Check for NexusInsight specific export formats
             if (data.type === 'nexus-insight-dashboard-config') {
               setDashboardState(data.datasets, data.panels, data.layouts);
             } else if (data.type === 'nexus-insight-dataset-export') {
-              // Add dataset and its associated panels/layouts
               addDataset(data.dataset);
-              // For panels and layouts, we would need new methods to append them, 
-              // but for now let's just add the dataset.
+            } else if (data.type === 'nexus-insight-panel-export') {
+              // Import individual panel
+              if (data.dataset) {
+                // Ensure unique ID if dataset with same ID already exists? 
+                // For now just add it.
+                addDataset(data.dataset);
+              }
+              if (data.panel && data.layout) {
+                addPanel(data.panel, data.layout);
+              }
             } else {
               // Standard JSON array
               const headers = Array.isArray(data) && data.length > 0 ? Object.keys(data[0]) : [];
@@ -68,7 +74,7 @@ export function DataImporter() {
 
       reader.readAsText(file);
     },
-    [addDataset, setDashboardState]
+    [addDataset, setDashboardState, addPanel]
   );
 
   return (
