@@ -31,7 +31,7 @@ import { PanelRenderer } from './PanelRenderer';
 interface PanelDialogProps {
   mode?: 'add' | 'edit';
   panelToEdit?: PanelConfig;
-  trigger?: React.ReactNode;
+  trigger?: React.ReactElement;
 }
 
 export function PanelDialog({ mode = 'add', panelToEdit, trigger }: PanelDialogProps) {
@@ -209,7 +209,7 @@ export function PanelDialog({ mode = 'add', panelToEdit, trigger }: PanelDialogP
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger render={trigger || defaultTrigger} />
+      <DialogTrigger render={(trigger || defaultTrigger) as React.ReactElement} />
       <DialogContent className="sm:max-w-[800px] gap-0 p-0 overflow-hidden border-none shadow-2xl">
         <div className="flex flex-col md:flex-row h-full max-h-[90vh]">
           {/* Configuration Side */}
