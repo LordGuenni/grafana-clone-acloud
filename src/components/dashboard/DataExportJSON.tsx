@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { useDashboardStore } from '@/store/useDashboardStore';
-import { Button, buttonVariants } from '@/components/ui/button';
+import { Button } from '@/components/ui/button';
 import { Download, FileJson, Layout } from 'lucide-react';
 import {
   DropdownMenu,
@@ -11,8 +11,8 @@ import {
   DropdownMenuTrigger,
   DropdownMenuSeparator,
   DropdownMenuLabel,
+  DropdownMenuGroup,
 } from '@/components/ui/dropdown-menu';
-import { cn } from '@/lib/utils';
 
 export function DataExporter() {
   const { datasets, panels, layouts } = useDashboardStore();
@@ -43,7 +43,6 @@ export function DataExporter() {
     const exportData = {
       type: 'nexus-insight-dataset-export',
       dataset,
-      // Include panels and layouts that use this dataset
       relatedPanels: panels.filter(p => p.dataSourceId === datasetId),
       relatedLayouts: layouts.filter(l => panels.some(p => p.id === l.i && p.dataSourceId === datasetId))
     };
@@ -63,26 +62,38 @@ export function DataExporter() {
 
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger className={cn(buttonVariants({ variant: 'outline', size: 'sm' }), 'gap-2 cursor-pointer border-primary/20 hover:border-primary/50')}>
+      <DropdownMenuTrigger 
+        render={
+          <Button 
+            variant="outline" 
+            size="sm" 
+            className="gap-2 cursor-pointer border-primary/20 hover:border-primary/50" 
+          />
+        }
+      >
         <Download className="h-4 w-4" />
         Export
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-64">
-        <DropdownMenuLabel className="text-[10px] uppercase tracking-widest text-muted-foreground">Full Backup</DropdownMenuLabel>
-        <DropdownMenuItem onClick={exportFullDashboard} className="gap-2 font-medium">
-          <Layout className="h-3.5 w-3.5 text-primary" />
-          Complete Dashboard Config
-        </DropdownMenuItem>
+        <DropdownMenuGroup>
+          <DropdownMenuLabel className="text-[10px] uppercase tracking-widest text-muted-foreground">Full Backup</DropdownMenuLabel>
+          <DropdownMenuItem onSelect={exportFullDashboard} className="gap-2 font-medium">
+            <Layout className="h-3.5 w-3.5 text-primary" />
+            Complete Dashboard Config
+          </DropdownMenuItem>
+        </DropdownMenuGroup>
         
         <DropdownMenuSeparator />
         
-        <DropdownMenuLabel className="text-[10px] uppercase tracking-widest text-muted-foreground">Individual Datasets</DropdownMenuLabel>
-        {datasets.map((dataset) => (
-          <DropdownMenuItem key={dataset.id} onClick={() => exportDatasetOnly(dataset.id)} className="gap-2">
-            <FileJson className="h-3.5 w-3.5" />
-            {dataset.name}
-          </DropdownMenuItem>
-        ))}
+        <DropdownMenuGroup>
+          <DropdownMenuLabel className="text-[10px] uppercase tracking-widest text-muted-foreground">Individual Datasets</DropdownMenuLabel>
+          {datasets.map((dataset) => (
+            <DropdownMenuItem key={dataset.id} onSelect={() => exportDatasetOnly(dataset.id)} className="gap-2">
+              <FileJson className="h-3.5 w-3.5" />
+              {dataset.name}
+            </DropdownMenuItem>
+          ))}
+        </DropdownMenuGroup>
       </DropdownMenuContent>
     </DropdownMenu>
   );
