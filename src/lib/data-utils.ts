@@ -6,16 +6,22 @@ export function aggregateData(data: any[], config: PanelConfig) {
   if (!xKey || !yKey || !data.length) return [];
 
   const grouped = data.reduce((acc: any, curr) => {
-    const key = curr[xKey];
+    const key = String(curr[xKey] ?? 'Unknown');
     if (!acc[key]) {
       acc[key] = [];
     }
-    acc[key].push(curr[yKey]);
+    // Handle both numbers and strings that look like numbers
+    const rawValue = curr[yKey];
+    const numericValue = typeof rawValue === 'number' ? rawValue : parseFloat(rawValue);
+    
+    if (!isNaN(numericValue)) {
+      acc[key].push(numericValue);
+    }
     return acc;
   }, {});
 
   return Object.keys(grouped).map((key) => {
-    const values = grouped[key].filter((v: any) => typeof v === 'number');
+    const values = grouped[key];
     let value = 0;
 
     if (values.length > 0) {
@@ -38,6 +44,10 @@ export function aggregateData(data: any[], config: PanelConfig) {
         default:
           value = 0;
       }
+    } else if (aggregation === 'count') {
+       // If no numeric values, count could still be relevant if we counted rows, 
+       // but here we specifically count rows with valid yKey values.
+       value = 0;
     }
 
     return {
