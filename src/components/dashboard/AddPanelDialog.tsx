@@ -1,8 +1,8 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useDashboardStore } from '@/store/useDashboardStore';
-import { ChartType, PanelConfig, PanelLayout } from '@/types/dashboard';
+import { ChartType, PanelConfig, PanelLayout, Dataset } from '@/types/dashboard';
 import {
   Dialog,
   DialogContent,
@@ -23,9 +23,10 @@ import {
 } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Plus, Database, Code } from 'lucide-react';
+import { Plus, Database, Code, Eye } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
 import { cn } from '@/lib/utils';
+import { PanelRenderer } from './PanelRenderer';
 
 export function AddPanelDialog() {
   const { datasets, addPanel, addDataset } = useDashboardStore();
@@ -43,8 +44,51 @@ export function AddPanelDialog() {
   // Manual JSON State
   const [manualJson, setManualJson] = useState('');
   const [jsonError, setJsonError] = useState<string | null>(null);
+  const [tempManualDataset, setTempManualDataset] = useState<Dataset | null>(null);
 
   const selectedDataset = datasets.find((d) => d.id === dataSourceId);
+
+  // Update temp dataset for manual JSON preview
+  useEffect(() => {
+    if (activeTab === 'manual' && manualJson && !jsonError) {
+      try {
+        const parsed = JSON.parse(manualJson);
+        const data = Array.isArray(parsed) ? parsed : [parsed];
+        const headers = data.length > 0 ? Object.keys(data[0]) : [];
+        setTempManualDataset({
+          id: 'temp-preview',
+          name: 'Preview',
+          data,
+          headers,
+        });
+      } catch (e) {}
+    } else {
+      setTempManualDataset(null);
+    }
+  }, [manualJson, jsonError, activeTab]);
+
+  const previewPanel: PanelConfig | null = useMemo(() => {
+    const dsId = activeTab === 'manual' ? 'temp-preview' : dataSourceId;
+    if (!dsId || !xKey || !yKey) return null;
+
+    return {
+      id: 'preview',
+      title,
+      type,
+      dataSourceId: dsId,
+      xKey,
+      yKey,
+      aggregation,
+    };
+  }, [title, type, dataSourceId, xKey, yKey, aggregation, activeTab]);
+
+  // Use a hacky store-like access for PanelRenderer preview
+  const previewDatasets = useMemo(() => {
+    if (activeTab === 'manual' && tempManualDataset) {
+      return [...datasets, tempManualDataset];
+    }
+    return datasets;
+  }, [datasets, tempManualDataset, activeTab]);
 
   const handleAdd = () => {
     let finalDataSourceId = dataSourceId;
@@ -108,6 +152,7 @@ export function AddPanelDialog() {
     setManualJson('');
     setJsonError(null);
     setActiveTab('existing');
+    setTempManualDataset(null);
   };
 
   const validateJson = (val: string) => {
@@ -120,7 +165,6 @@ export function AddPanelDialog() {
       const parsed = JSON.parse(val);
       if (!Array.isArray(parsed)) throw new Error('Must be an array');
       setJsonError(null);
-      // Auto-populate keys if valid
       if (parsed.length > 0) {
         const keys = Object.keys(parsed[0]);
         if (!xKey) setXKey(keys[0]);
@@ -136,133 +180,157 @@ export function AddPanelDialog() {
       <DialogTrigger className={cn(buttonVariants({ variant: 'default' }), 'cursor-pointer gap-2')}>
         <Plus className="h-4 w-4" /> Add Panel
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[500px]">
-        <DialogHeader>
-          <DialogTitle>Configure Panel</DialogTitle>
-        </DialogHeader>
-        
-        <div className="grid gap-4 py-4">
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="title" className="text-right text-xs font-bold uppercase text-muted-foreground">
-              Title
-            </Label>
-            <Input
-              id="title"
-              placeholder="e.g. Sales Distribution"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              className="col-span-3 h-9"
-            />
-          </div>
-
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label className="text-right text-xs font-bold uppercase text-muted-foreground">Type</Label>
-            <Select value={type} onValueChange={(v) => setType(v as ChartType || 'line')}>
-              <SelectTrigger className="col-span-3 h-9">
-                <SelectValue placeholder="Select chart type" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="line">Line Chart</SelectItem>
-                <SelectItem value="bar">Bar Chart</SelectItem>
-                <SelectItem value="area">Area Chart</SelectItem>
-                <SelectItem value="pie">Pie Chart</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="grid w-full grid-cols-2 mb-4">
-              <TabsTrigger value="existing" className="gap-2 text-xs">
-                <Database className="h-3 w-3" /> Existing Data
-              </TabsTrigger>
-              <TabsTrigger value="manual" className="gap-2 text-xs">
-                <Code className="h-3 w-3" /> Manual JSON
-              </TabsTrigger>
-            </TabsList>
+      <DialogContent className="sm:max-w-[800px] gap-0 p-0 overflow-hidden border-none shadow-2xl">
+        <div className="flex flex-col md:flex-row h-full max-h-[90vh]">
+          {/* Configuration Side */}
+          <div className="flex-1 p-6 space-y-4 border-r bg-background overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Configure Panel</DialogTitle>
+            </DialogHeader>
             
-            <TabsContent value="existing" className="space-y-4 min-h-[120px]">
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label className="text-right text-xs font-bold uppercase text-muted-foreground">Source</Label>
-                <Select value={dataSourceId} onValueChange={(v) => setDataSourceId(v || '')}>
-                  <SelectTrigger className="col-span-3 h-9">
-                    <SelectValue placeholder="Select dataset" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {datasets.map((d) => (
-                      <SelectItem key={d.id} value={d.id}>
-                        {d.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </TabsContent>
-
-            <TabsContent value="manual" className="space-y-2">
-              <div className="space-y-2">
-                <Label className="text-[10px] font-bold uppercase text-muted-foreground">JSON Data (Array of Objects)</Label>
-                <Textarea 
-                  placeholder='[{"category": "A", "value": 10}, {"category": "B", "value": 20}]'
-                  className={cn("font-mono text-[11px] h-24 resize-none", jsonError && "border-destructive focus-visible:ring-destructive")}
-                  value={manualJson}
-                  onChange={(e) => validateJson(e.target.value)}
+            <div className="grid gap-4 py-2">
+              <div className="space-y-1.5">
+                <Label htmlFor="title" className="text-[10px] font-bold uppercase text-muted-foreground ml-1">Title</Label>
+                <Input
+                  id="title"
+                  placeholder="e.g. Sales Distribution"
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  className="h-9"
                 />
-                {jsonError && <p className="text-[10px] text-destructive font-medium">{jsonError}</p>}
               </div>
-            </TabsContent>
-          </Tabs>
 
-          <div className="grid grid-cols-2 gap-4">
-             <div className="space-y-2">
-                <Label className="text-[10px] font-bold uppercase text-muted-foreground">X-Axis (Legend)</Label>
-                <Select value={xKey} onValueChange={(v) => setXKey(v || '')}>
+              <div className="space-y-1.5">
+                <Label className="text-[10px] font-bold uppercase text-muted-foreground ml-1">Visualization Type</Label>
+                <Select value={type} onValueChange={(v) => setType(v as ChartType || 'line')}>
                   <SelectTrigger className="h-9">
-                    <SelectValue placeholder="Select key" />
+                    <SelectValue placeholder="Select chart type" />
                   </SelectTrigger>
                   <SelectContent>
-                    {(selectedDataset?.headers || (manualJson && !jsonError ? Object.keys(JSON.parse(manualJson)[0]) : [])).map((h) => (
-                      <SelectItem key={h} value={h}>{h}</SelectItem>
-                    ))}
+                    <SelectItem value="line">Line Chart</SelectItem>
+                    <SelectItem value="bar">Bar Chart</SelectItem>
+                    <SelectItem value="area">Area Chart</SelectItem>
+                    <SelectItem value="pie">Pie Chart</SelectItem>
                   </SelectContent>
                 </Select>
-             </div>
-             <div className="space-y-2">
-                <Label className="text-[10px] font-bold uppercase text-muted-foreground">Y-Axis (Value)</Label>
-                <Select value={yKey} onValueChange={(v) => setYKey(v || '')}>
+              </div>
+
+              <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+                <TabsList className="grid w-full grid-cols-2 h-8">
+                  <TabsTrigger value="existing" className="text-[10px] uppercase font-bold tracking-tight">
+                    Database
+                  </TabsTrigger>
+                  <TabsTrigger value="manual" className="text-[10px] uppercase font-bold tracking-tight">
+                    Custom JSON
+                  </TabsTrigger>
+                </TabsList>
+                
+                <TabsContent value="existing" className="space-y-4 mt-2">
+                  <div className="space-y-1.5">
+                    <Label className="text-[10px] font-bold uppercase text-muted-foreground ml-1">Data Source</Label>
+                    <Select value={dataSourceId} onValueChange={(v) => setDataSourceId(v || '')}>
+                      <SelectTrigger className="h-9">
+                        <SelectValue placeholder="Select dataset" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {datasets.map((d) => (
+                          <SelectItem key={d.id} value={d.id}>
+                            {d.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </TabsContent>
+
+                <TabsContent value="manual" className="space-y-2 mt-2">
+                  <div className="space-y-1.5">
+                    <Label className="text-[10px] font-bold uppercase text-muted-foreground ml-1">Raw JSON Array</Label>
+                    <Textarea 
+                      placeholder='[{"category": "A", "value": 10}]'
+                      className={cn("font-mono text-[10px] h-20 resize-none", jsonError && "border-destructive")}
+                      value={manualJson}
+                      onChange={(e) => validateJson(e.target.value)}
+                    />
+                    {jsonError && <p className="text-[10px] text-destructive italic">{jsonError}</p>}
+                  </div>
+                </TabsContent>
+              </Tabs>
+
+              <div className="grid grid-cols-2 gap-3">
+                 <div className="space-y-1.5">
+                    <Label className="text-[10px] font-bold uppercase text-muted-foreground ml-1">X-Axis</Label>
+                    <Select value={xKey} onValueChange={(v) => setXKey(v || '')}>
+                      <SelectTrigger className="h-9">
+                        <SelectValue placeholder="Key" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {(selectedDataset?.headers || (tempManualDataset?.headers || [])).map((h) => (
+                          <SelectItem key={h} value={h}>{h}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                 </div>
+                 <div className="space-y-1.5">
+                    <Label className="text-[10px] font-bold uppercase text-muted-foreground ml-1">Y-Axis</Label>
+                    <Select value={yKey} onValueChange={(v) => setYKey(v || '')}>
+                      <SelectTrigger className="h-9">
+                        <SelectValue placeholder="Key" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {(selectedDataset?.headers || (tempManualDataset?.headers || [])).map((h) => (
+                          <SelectItem key={h} value={h}>{h}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                 </div>
+              </div>
+
+              <div className="space-y-1.5">
+                <Label className="text-[10px] font-bold uppercase text-muted-foreground ml-1">Aggregation</Label>
+                <Select value={aggregation} onValueChange={(v) => setAggregation(v as any || 'sum')}>
                   <SelectTrigger className="h-9">
-                    <SelectValue placeholder="Select key" />
+                    <SelectValue placeholder="Method" />
                   </SelectTrigger>
                   <SelectContent>
-                    {(selectedDataset?.headers || (manualJson && !jsonError ? Object.keys(JSON.parse(manualJson)[0]) : [])).map((h) => (
-                      <SelectItem key={h} value={h}>{h}</SelectItem>
-                    ))}
+                    <SelectItem value="sum">Sum</SelectItem>
+                    <SelectItem value="avg">Average</SelectItem>
+                    <SelectItem value="count">Count</SelectItem>
+                    <SelectItem value="min">Minimum</SelectItem>
+                    <SelectItem value="max">Maximum</SelectItem>
                   </SelectContent>
                 </Select>
-             </div>
+              </div>
+            </div>
+
+            <Button onClick={handleAdd} className="w-full mt-4 h-10 shadow-lg shadow-primary/20" disabled={jsonError !== null || (!dataSourceId && !manualJson) || !xKey || !yKey}>
+              Create Panel
+            </Button>
           </div>
 
-          <div className="space-y-2">
-            <Label className="text-[10px] font-bold uppercase text-muted-foreground">Aggregation Method</Label>
-            <Select value={aggregation} onValueChange={(v) => setAggregation(v as any || 'sum')}>
-              <SelectTrigger className="h-9">
-                <SelectValue placeholder="Select aggregation" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="sum">Sum</SelectItem>
-                <SelectItem value="avg">Average</SelectItem>
-                <SelectItem value="count">Count</SelectItem>
-                <SelectItem value="min">Minimum</SelectItem>
-                <SelectItem value="max">Maximum</SelectItem>
-              </SelectContent>
-            </Select>
+          {/* Preview Side */}
+          <div className="flex-1 bg-muted/30 p-6 flex flex-col min-h-[300px] md:min-h-0">
+            <div className="flex items-center gap-2 mb-4">
+              <Eye className="h-4 w-4 text-primary" />
+              <span className="text-xs font-bold uppercase tracking-widest">Live Preview</span>
+            </div>
+            
+            <div className="flex-1 bg-card border rounded-xl overflow-hidden shadow-inner flex items-center justify-center relative">
+              {previewPanel ? (
+                <PanelRenderer previewData={activeTab === 'manual' ? tempManualDataset?.data : undefined} panel={previewPanel} />
+              ) : (
+                <div className="text-center p-8">
+                  <div className="bg-muted rounded-full w-12 h-12 flex items-center justify-center mx-auto mb-3">
+                    <Database className="h-6 w-6 text-muted-foreground" />
+                  </div>
+                  <p className="text-xs text-muted-foreground font-medium italic">
+                    Complete configuration to see preview
+                  </p>
+                </div>
+              )}
+            </div>
           </div>
         </div>
-
-        <DialogFooter>
-          <Button onClick={handleAdd} className="w-full shadow-lg shadow-primary/20" disabled={jsonError !== null || (!dataSourceId && !manualJson) || !xKey || !yKey}>
-            Generate Visualization
-          </Button>
-        </DialogFooter>
       </DialogContent>
     </Dialog>
   );

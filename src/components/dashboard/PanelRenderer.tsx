@@ -38,9 +38,10 @@ const COLORS = [
 
 interface PanelRendererProps {
   panel: PanelConfig;
+  previewData?: any[]; // Optional prop for live preview in dialog
 }
 
-export function PanelRenderer({ panel }: PanelRendererProps) {
+export function PanelRenderer({ panel, previewData }: PanelRendererProps) {
   const datasets = useDashboardStore((state) => state.datasets);
   const globalFilter = useDashboardStore((state) => state.globalFilter);
 
@@ -50,11 +51,15 @@ export function PanelRenderer({ panel }: PanelRendererProps) {
   );
 
   const processedData = useMemo(() => {
-    if (!dataset) return [];
-    let filteredData = dataset.data;
+    // If previewData is provided (Manual JSON tab), use it instead of store lookup
+    const rawData = previewData || dataset?.data;
+    if (!rawData) return [];
     
-    if (globalFilter) {
-      filteredData = dataset.data.filter((row) => 
+    let filteredData = rawData;
+    
+    // Only apply global filter if we're not in preview mode (or if you want global filter in preview)
+    if (globalFilter && !previewData) {
+      filteredData = rawData.filter((row: any) => 
         Object.values(row).some(val => 
           String(val).toLowerCase().includes(globalFilter.toLowerCase())
         )
@@ -62,9 +67,9 @@ export function PanelRenderer({ panel }: PanelRendererProps) {
     }
     
     return aggregateData(filteredData, panel);
-  }, [dataset, panel, globalFilter]);
+  }, [dataset, panel, globalFilter, previewData]);
 
-  if (!dataset) {
+  if (!dataset && !previewData) {
     return (
       <div className="flex h-full items-center justify-center text-muted-foreground text-sm italic">
         No data source selected
