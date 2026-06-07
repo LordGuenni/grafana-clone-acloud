@@ -16,20 +16,21 @@ export function aggregateData(data: any[], config: PanelConfig) {
   // 2. Identify all groups if groupBy is set
   const allGroups = groupBy 
     ? Array.from(new Set(data.map(d => String(d[groupBy] ?? 'Other'))))
-    : ['Value'];
+    : [];
 
   // 3. Process each X-axis group
   return Object.keys(groupedByX).map((xVal) => {
     const result: any = { [xKey]: xVal };
     const rowsInX = groupedByX[xVal];
 
-    if (groupBy) {
+    if (groupBy && allGroups.length > 0) {
       // Pivot data for each subgroup
       allGroups.forEach(groupName => {
         const rowsInGroup = rowsInX.filter((d: any) => String(d[groupBy] ?? 'Other') === groupName);
         result[groupName] = calculateValue(rowsInGroup, yKey, aggregation);
       });
     } else {
+      // Single series mode - use yKey as the series name
       result[yKey] = calculateValue(rowsInX, yKey, aggregation);
     }
 
@@ -65,5 +66,6 @@ function calculateValue(rows: any[], yKey: string, aggregation: string) {
 
 export function getSeriesKeys(data: any[], xKey: string): string[] {
   if (data.length === 0) return [];
+  // All keys except the xKey are series names
   return Object.keys(data[0]).filter(k => k !== xKey);
 }
