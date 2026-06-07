@@ -70,18 +70,18 @@ export function SampleDataButton() {
       i: userId, x: 0, y: 4, w: 6, h: 4,
     });
 
-    // 3. Area Chart: Latency Reduction
-    const latencyId = uuidv4();
+    // 3. Pie Chart: Revenue Share by Region
+    const pieId = uuidv4();
     addPanel({
-      id: latencyId,
-      title: 'Global Avg Latency (ms)',
-      type: 'area',
+      id: pieId,
+      title: 'Revenue Share by Region',
+      type: 'pie',
       dataSourceId: datasetId,
-      xKey: 'month',
-      yKey: 'latency',
-      aggregation: 'avg',
+      xKey: 'region',
+      yKey: 'revenue',
+      aggregation: 'sum',
     }, {
-      i: latencyId, x: 6, y: 4, w: 6, h: 4,
+      i: pieId, x: 6, y: 4, w: 6, h: 4,
     });
   };
 
