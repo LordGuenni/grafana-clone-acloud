@@ -28,4 +28,5 @@ export const useDashboardStore = create<DashboardState>((set) => ({
     })),
   updateLayouts: (layouts) => set({ layouts }),
   setGlobalFilter: (globalFilter) => set({ globalFilter }),
+  setDashboardState: (datasets, panels, layouts) => set({ datasets, panels, layouts }),
 }));

@@ -37,4 +37,5 @@ export interface DashboardState {
   removePanel: (id: string) => void;
   updateLayouts: (layouts: PanelLayout[]) => void;
   setGlobalFilter: (filter: string) => void;
+  setDashboardState: (datasets: Dataset[], panels: PanelConfig[], layouts: PanelLayout[]) => void;
 }
