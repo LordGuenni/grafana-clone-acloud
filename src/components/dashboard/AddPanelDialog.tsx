@@ -157,7 +157,7 @@ export function AddPanelDialog() {
 
           <div className="grid grid-cols-4 items-center gap-4">
             <Label className="text-right text-xs font-bold uppercase text-muted-foreground">Type</Label>
-            <Select value={type} onValueChange={(v) => setType(v as ChartType)}>
+            <Select value={type} onValueChange={(v) => setType(v as ChartType || 'line')}>
               <SelectTrigger className="col-span-3 h-9">
                 <SelectValue placeholder="Select chart type" />
               </SelectTrigger>
@@ -183,7 +183,7 @@ export function AddPanelDialog() {
             <TabsContent value="existing" className="space-y-4 min-h-[120px]">
               <div className="grid grid-cols-4 items-center gap-4">
                 <Label className="text-right text-xs font-bold uppercase text-muted-foreground">Source</Label>
-                <Select value={dataSourceId} onValueChange={setDataSourceId}>
+                <Select value={dataSourceId} onValueChange={(v) => setDataSourceId(v || '')}>
                   <SelectTrigger className="col-span-3 h-9">
                     <SelectValue placeholder="Select dataset" />
                   </SelectTrigger>
@@ -215,7 +215,7 @@ export function AddPanelDialog() {
           <div className="grid grid-cols-2 gap-4">
              <div className="space-y-2">
                 <Label className="text-[10px] font-bold uppercase text-muted-foreground">X-Axis (Legend)</Label>
-                <Select value={xKey} onValueChange={setXKey}>
+                <Select value={xKey} onValueChange={(v) => setXKey(v || '')}>
                   <SelectTrigger className="h-9">
                     <SelectValue placeholder="Select key" />
                   </SelectTrigger>
@@ -228,7 +228,7 @@ export function AddPanelDialog() {
              </div>
              <div className="space-y-2">
                 <Label className="text-[10px] font-bold uppercase text-muted-foreground">Y-Axis (Value)</Label>
-                <Select value={yKey} onValueChange={setYKey}>
+                <Select value={yKey} onValueChange={(v) => setYKey(v || '')}>
                   <SelectTrigger className="h-9">
                     <SelectValue placeholder="Select key" />
                   </SelectTrigger>
@@ -243,7 +243,7 @@ export function AddPanelDialog() {
 
           <div className="space-y-2">
             <Label className="text-[10px] font-bold uppercase text-muted-foreground">Aggregation Method</Label>
-            <Select value={aggregation} onValueChange={(v) => setAggregation(v as any)}>
+            <Select value={aggregation} onValueChange={(v) => setAggregation(v as any || 'sum')}>
               <SelectTrigger className="h-9">
                 <SelectValue placeholder="Select aggregation" />
               </SelectTrigger>
