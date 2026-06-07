@@ -31,6 +31,7 @@ export interface DashboardState {
   panels: PanelConfig[];
   layouts: PanelLayout[];
   globalFilter: string;
+  dataRange: [number, number];
   addDataset: (dataset: Dataset) => void;
   removeDataset: (id: string) => void;
   addPanel: (panel: PanelConfig, layout: PanelLayout) => void;
@@ -39,4 +40,5 @@ export interface DashboardState {
   updateLayouts: (layouts: PanelLayout[]) => void;
   setGlobalFilter: (filter: string) => void;
   setDashboardState: (datasets: Dataset[], panels: PanelConfig[], layouts: PanelLayout[]) => void;
+  setDataRange: (range: [number, number]) => void;
 }

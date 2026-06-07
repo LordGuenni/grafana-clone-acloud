@@ -9,6 +9,7 @@ export const useDashboardStore = create<DashboardState>()(
       panels: [],
       layouts: [],
       globalFilter: '',
+      dataRange: [0, 100],
       addDataset: (dataset) =>
         set((state) => ({ datasets: [...state.datasets, dataset] })),
       removeDataset: (id) =>
@@ -32,6 +33,7 @@ export const useDashboardStore = create<DashboardState>()(
       updateLayouts: (layouts) => set({ layouts }),
       setGlobalFilter: (globalFilter) => set({ globalFilter }),
       setDashboardState: (datasets, panels, layouts) => set({ datasets, panels, layouts }),
+      setDataRange: (dataRange) => set({ dataRange }),
     }),
     {
       name: 'nexus-insight-storage',

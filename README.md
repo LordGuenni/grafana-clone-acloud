@@ -7,6 +7,7 @@ NexusInsight is a high-performance, interactive data visualization dashboard bui
 - **Dynamic Layout:** Drag-and-drop, resizable grid system powered by `react-grid-layout`.
 - **Intelligent Importer:** Support for CSV, JSON files, and direct Manual JSON entry.
 - **Rich Visualizations:** Line, Bar, Area, and Pie charts with smooth animations and multi-colored themes.
+- **Global Scaling:** A synchronized range slider to zoom into specific data segments (e.g., specific months).
 - **Full State Backups:** Export and Import your entire dashboard configuration (panels + data) as a single JSON file.
 - **Theme-Ready:** Full dark and light mode support with glassmorphism effects.
 

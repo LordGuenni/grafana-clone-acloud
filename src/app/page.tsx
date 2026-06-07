@@ -7,6 +7,7 @@ import { DataExporter as DataExportJSON } from '@/components/dashboard/DataExpor
 import { PanelDialog } from '@/components/dashboard/PanelDialog';
 import { SampleDataButton } from '@/components/dashboard/SampleDataButton';
 import { GlobalFilter } from '@/components/dashboard/GlobalFilter';
+import { GlobalRangeSlider } from '@/components/dashboard/GlobalRangeSlider';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { Zap } from 'lucide-react';
 import { motion } from 'framer-motion';
@@ -38,6 +39,7 @@ export default function Home() {
         </div>
         <div className="flex items-center gap-3">
           <GlobalFilter />
+          <GlobalRangeSlider />
           <div className="w-px h-6 bg-border mx-1" />
           <DataExportJSON />
           <SampleDataButton />

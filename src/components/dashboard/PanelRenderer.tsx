@@ -35,6 +35,7 @@ interface PanelRendererProps {
 export function PanelRenderer({ panel, previewData }: PanelRendererProps) {
   const datasets = useDashboardStore((state) => state.datasets);
   const globalFilter = useDashboardStore((state) => state.globalFilter);
+  const dataRange = useDashboardStore((state) => state.dataRange);
   const { theme } = useTheme();
 
   const isDark = theme === 'dark';
@@ -59,8 +60,18 @@ export function PanelRenderer({ panel, previewData }: PanelRendererProps) {
       });
     }
     
-    return aggregateData(filteredData, panel);
-  }, [dataset, panel, globalFilter, previewData]);
+    // Apply Aggregation first
+    let result = aggregateData(filteredData, panel);
+
+    // Apply Range Scaling (Percentage based slicing)
+    if (!previewData && result.length > 1) {
+      const startIdx = Math.floor((dataRange[0] / 100) * result.length);
+      const endIdx = Math.ceil((dataRange[1] / 100) * result.length);
+      result = result.slice(startIdx, Math.max(endIdx, startIdx + 1));
+    }
+
+    return result;
+  }, [dataset, panel, globalFilter, previewData, dataRange]);
 
   const seriesKeys = useMemo(() => getSeriesKeys(processedData, panel.xKey), [processedData, panel.xKey]);
 
@@ -155,7 +166,6 @@ export function PanelRenderer({ panel, previewData }: PanelRendererProps) {
           </AreaChart>
         );
       case 'pie':
-        // Pivot back to categorical format for Pie Chart
         const pieData = processedData.length > 0 ? seriesKeys.map((key, index) => ({
           name: key,
           value: processedData.reduce((sum, row) => sum + (Number(row[key]) || 0), 0)
