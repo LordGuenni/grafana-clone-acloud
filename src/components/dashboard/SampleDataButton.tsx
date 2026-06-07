@@ -8,34 +8,42 @@ import { v4 as uuidv4 } from 'uuid';
 import { PanelConfig, PanelLayout } from '@/types/dashboard';
 
 export function SampleDataButton() {
-  const { addDataset, addPanel, datasets } = useDashboardStore();
+  const { addDataset, addPanel, datasets, panels } = useDashboardStore();
 
   const loadSampleData = () => {
-    // Check if sample data is already loaded to avoid duplicates
-    if (datasets.some(d => d.name === 'Cloud Infrastructure Stats')) return;
+    // If panels already exist, we might not want to overwrite them or add more
+    // but the user specifically requested "Load Infrastructure Demo", so we'll append.
+    // We check by dataset name to avoid duplicate datasets.
+    
+    let datasetId = datasets.find(d => d.name === 'Cloud Infrastructure Stats')?.id;
+    
+    if (!datasetId) {
+      datasetId = uuidv4();
+      const data = [
+        { month: 'Jan', revenue: 4200, users: 1200, latency: 45, region: 'Europe' },
+        { month: 'Feb', revenue: 4800, users: 1450, latency: 42, region: 'Americas' },
+        { month: 'Mar', revenue: 5100, users: 1600, latency: 48, region: 'Asia' },
+        { month: 'Apr', revenue: 5900, users: 1900, latency: 38, region: 'Europe' },
+        { month: 'May', revenue: 6800, users: 2400, latency: 35, region: 'Americas' },
+        { month: 'Jun', revenue: 7500, users: 2800, latency: 32, region: 'Asia' },
+        { month: 'Jul', revenue: 8200, users: 3200, latency: 30, region: 'Europe' },
+        { month: 'Aug', revenue: 8900, users: 3600, latency: 28, region: 'Americas' },
+        { month: 'Sep', revenue: 9400, users: 3900, latency: 29, region: 'Asia' },
+        { month: 'Oct', revenue: 10500, users: 4500, latency: 27, region: 'Europe' },
+        { month: 'Nov', revenue: 11800, users: 5200, latency: 26, region: 'Americas' },
+        { month: 'Dec', revenue: 13500, users: 6100, latency: 25, region: 'Asia' },
+      ];
 
-    const datasetId = uuidv4();
-    const data = [
-      { month: 'Jan', revenue: 4200, users: 1200, latency: 45, region: 'Europe' },
-      { month: 'Feb', revenue: 4800, users: 1450, latency: 42, region: 'Americas' },
-      { month: 'Mar', revenue: 5100, users: 1600, latency: 48, region: 'Asia' },
-      { month: 'Apr', revenue: 5900, users: 1900, latency: 38, region: 'Europe' },
-      { month: 'May', revenue: 6800, users: 2400, latency: 35, region: 'Americas' },
-      { month: 'Jun', revenue: 7500, users: 2800, latency: 32, region: 'Asia' },
-      { month: 'Jul', revenue: 8200, users: 3200, latency: 30, region: 'Europe' },
-      { month: 'Aug', revenue: 8900, users: 3600, latency: 28, region: 'Americas' },
-      { month: 'Sep', revenue: 9400, users: 3900, latency: 29, region: 'Asia' },
-      { month: 'Oct', revenue: 10500, users: 4500, latency: 27, region: 'Europe' },
-      { month: 'Nov', revenue: 11800, users: 5200, latency: 26, region: 'Americas' },
-      { month: 'Dec', revenue: 13500, users: 6100, latency: 25, region: 'Asia' },
-    ];
+      addDataset({
+        id: datasetId,
+        name: 'Cloud Infrastructure Stats',
+        data,
+        headers: ['month', 'revenue', 'users', 'latency', 'region'],
+      });
+    }
 
-    addDataset({
-      id: datasetId,
-      name: 'Cloud Infrastructure Stats',
-      data,
-      headers: ['month', 'revenue', 'users', 'latency', 'region'],
-    });
+    // Only add panels if they don't exist yet to avoid cluttering on multiple clicks
+    if (panels.length > 0) return;
 
     // 1. Line Chart: Revenue Trend
     const revenueId = uuidv4();
