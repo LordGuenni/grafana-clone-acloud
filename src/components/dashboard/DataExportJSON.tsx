@@ -18,6 +18,7 @@ export function DataExporter() {
   const { datasets, panels, layouts } = useDashboardStore();
 
   const triggerDownload = (filename: string, data: any) => {
+    console.log(`Attempting to download: ${filename}`);
     try {
       const dataStr = JSON.stringify(data, null, 2);
       const blob = new Blob([dataStr], { type: 'application/json' });
@@ -26,16 +27,26 @@ export function DataExporter() {
       const link = document.createElement('a');
       link.href = url;
       link.download = filename;
+      
+      // Required for Firefox
       document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      URL.revokeObjectURL(url);
+      
+      // Small timeout ensures the menu closes and browser handles the click
+      setTimeout(() => {
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+        console.log('Download triggered successfully');
+      }, 50);
     } catch (error) {
       console.error('Export failed:', error);
     }
   };
 
-  const exportFullDashboard = () => {
+  const exportFullDashboard = (e: React.MouseEvent | Event) => {
+    // Prevent dropdown from keeping focus or interfering
+    e.stopPropagation();
+    
     const exportData = {
       type: 'nexus-insight-dashboard-config',
       version: '1.0',
@@ -47,7 +58,9 @@ export function DataExporter() {
     triggerDownload(`nexus_dashboard_config_${new Date().getTime()}.json`, exportData);
   };
 
-  const exportDatasetOnly = (datasetId: string) => {
+  const exportDatasetOnly = (e: React.MouseEvent | Event, datasetId: string) => {
+    e.stopPropagation();
+    
     const dataset = datasets.find((d) => d.id === datasetId);
     if (!dataset) return;
 
@@ -71,17 +84,20 @@ export function DataExporter() {
           <Button 
             variant="outline" 
             size="sm" 
-            className="gap-2 cursor-pointer border-primary/20 hover:border-primary/50" 
-          />
+            className="gap-2 cursor-pointer border-primary/20 hover:border-primary/50"
+          >
+            <Download className="h-4 w-4" />
+            Export
+          </Button>
         }
-      >
-        <Download className="h-4 w-4" />
-        Export
-      </DropdownMenuTrigger>
+      />
       <DropdownMenuContent align="end" className="w-64">
         <DropdownMenuGroup>
           <DropdownMenuLabel className="text-[10px] uppercase tracking-widest text-muted-foreground">Full Backup</DropdownMenuLabel>
-          <DropdownMenuItem onSelect={exportFullDashboard} className="gap-2 font-medium cursor-pointer">
+          <DropdownMenuItem 
+            onSelect={(e) => exportFullDashboard(e)} 
+            className="gap-2 font-medium cursor-pointer"
+          >
             <Layout className="h-3.5 w-3.5 text-primary" />
             Complete Dashboard Config
           </DropdownMenuItem>
@@ -94,7 +110,7 @@ export function DataExporter() {
           {datasets.map((dataset) => (
             <DropdownMenuItem 
               key={dataset.id} 
-              onSelect={() => exportDatasetOnly(dataset.id)} 
+              onSelect={(e) => exportDatasetOnly(e, dataset.id)} 
               className="gap-2 cursor-pointer"
             >
               <FileJson className="h-3.5 w-3.5" />
