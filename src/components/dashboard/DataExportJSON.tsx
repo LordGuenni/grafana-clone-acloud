@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { useDashboardStore } from '@/store/useDashboardStore';
-import { Button } from '@/components/ui/button';
+import { Button, buttonVariants } from '@/components/ui/button';
 import { Download } from 'lucide-react';
 import {
   DropdownMenu,
@@ -10,6 +10,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { cn } from '@/lib/utils';
 
 export function DataExporter() {
   const { datasets } = useDashboardStore();
@@ -33,11 +34,9 @@ export function DataExporter() {
 
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button variant="outline" size="sm" className="gap-2">
-          <Download className="h-4 w-4" />
-          Export JSON
-        </Button>
+      <DropdownMenuTrigger className={cn(buttonVariants({ variant: 'outline', size: 'sm' }), 'gap-2 cursor-pointer')}>
+        <Download className="h-4 w-4" />
+        Export JSON
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-56">
         {datasets.map((dataset) => (
