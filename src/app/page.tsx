@@ -3,11 +3,12 @@
 import React from 'react';
 import { Dashboard } from '@/components/dashboard/Dashboard';
 import { DataImporter } from '@/components/dashboard/DataImporter';
+import { DataExporter as DataExportJSON } from '@/components/dashboard/DataExportJSON';
 import { AddPanelDialog } from '@/components/dashboard/AddPanelDialog';
 import { SampleDataButton } from '@/components/dashboard/SampleDataButton';
 import { GlobalFilter } from '@/components/dashboard/GlobalFilter';
 import { ThemeToggle } from '@/components/ThemeToggle';
-import { LayoutDashboard, Zap } from 'lucide-react';
+import { Zap } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 export default function Home() {
@@ -38,6 +39,7 @@ export default function Home() {
         <div className="flex items-center gap-3">
           <GlobalFilter />
           <div className="w-px h-6 bg-border mx-1" />
+          <DataExportJSON />
           <SampleDataButton />
           <DataImporter />
           <AddPanelDialog />
